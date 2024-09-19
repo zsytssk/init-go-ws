@@ -22,13 +22,42 @@
     ws = null;
   };
   ws.onmessage = function (evt) {
-    const [type, time, link] = evt.data.split("|");
+    console.log("ws:>  ", evt);
+    const [type, action, link, time] = evt.data.split("|");
     if (type !== "youtube" || !location.href.startsWith(link)) {
       return;
     }
+
     const video = document.querySelector("video");
-    video.currentTime = time;
-    video.play();
+    const subtitles = document.querySelector(".ytp-subtitles-button");
+    switch (action) {
+      case "jump":
+        video.currentTime = time;
+        video.play();
+        break;
+      case "toggle_subtitle":
+        subtitles.click();
+        break;
+      case "reduce_speed":
+        video.playbackRate *= 0.75;
+        break;
+      case "plus_speed":
+        video.playbackRate /= 0.75;
+        break;
+      case "play_back":
+        video.currentTime -= 5;
+        break;
+      case "play_forward":
+        video.currentTime += 5;
+        break;
+      case "toggle_pause":
+        if (video.paused) {
+          video.play();
+        } else {
+          video.pause();
+        }
+        break;
+    }
   };
   ws.onerror = function (evt) {
     console.log("ws:> error " + evt.data);
