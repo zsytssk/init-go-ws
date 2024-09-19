@@ -8,27 +8,6 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=youtube.com
 // @grant        none
 // ==/UserScript==
-
-function triggerKeyEvent(
-  keyCode,
-  opts = {
-    altKey: false,
-    ctrlKey: false,
-    metaKey: false,
-    shiftKey: false,
-    repeat: false,
-  }
-) {
-  var event = new KeyboardEvent("keydown", {
-    keyCode: keyCode,
-    which: keyCode,
-    bubbles: true,
-    cancelable: true,
-    ...opts,
-  });
-  document.dispatchEvent(event);
-}
-
 (function () {
   "use strict";
   const url = "http://localhost:60829/ws";
@@ -55,22 +34,26 @@ function triggerKeyEvent(
         video.play();
         break;
       case "toggle_subtitle":
-        triggerKeyEvent("C".charCodeAt(0));
+        subtitles.click();
         break;
       case "reduce_speed":
-        triggerKeyEvent(188, { shiftKey: true });
+        video.playbackRate *= 0.75;
         break;
       case "plus_speed":
-        triggerKeyEvent(190, { shiftKey: true });
+        video.playbackRate /= 0.75;
         break;
       case "play_back":
-        triggerKeyEvent(37);
+        video.currentTime -= 5;
         break;
       case "play_forward":
-        triggerKeyEvent(39);
+        video.currentTime += 5;
         break;
       case "toggle_pause":
-        triggerKeyEvent(75);
+        if (video.paused) {
+          video.play();
+        } else {
+          video.pause();
+        }
         break;
     }
   };
