@@ -6,7 +6,7 @@
 // @author       You
 // @match        https://www.youtube.com/watch*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=youtube.com
-// @grant        none
+// @grant        GM_setClipboard
 // ==/UserScript==
 
 function triggerKeyEvent(
@@ -43,12 +43,12 @@ function triggerKeyEvent(
   };
   ws.onmessage = function (evt) {
     const [type, action, link, time] = evt.data.split("|");
+    console.log(`test:>`, [type, action, link, time]);
     if (type !== "youtube" || !location.href.startsWith(link)) {
       return;
     }
 
     const video = document.querySelector("video");
-    const subtitles = document.querySelector(".ytp-subtitles-button");
     switch (action) {
       case "jump":
         video.currentTime = time;
@@ -68,6 +68,11 @@ function triggerKeyEvent(
         break;
       case "play_forward":
         triggerKeyEvent(39);
+        break;
+      case "copy_time":
+        GM_setClipboard(video.currentTime.toFixed(1), "text", () =>
+          console.log("Clipboard set!")
+        );
         break;
       case "toggle_pause":
         triggerKeyEvent(75);
