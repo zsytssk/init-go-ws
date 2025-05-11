@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -17,11 +18,11 @@ var upgrader = websocket.Upgrader{
 
 var clients = make(map[*websocket.Conn]bool)
 var broadcast = make(chan Message)
-var lastmsg = Message{Type: 0}
+var lastMsg = Message{Type: 0}
 
 type Message struct {
 	Type    int
-	Content string
+	Content []byte
 }
 
 func main() {
@@ -30,8 +31,8 @@ func main() {
 		panic(fmt.Sprintf("端口 %d 已被占用", port))
 	}
 
-	http.HandleFunc("/ws", handleConnections)
-	http.HandleFunc("/send", sendPage)
+	http.HandleFunc("/ws", handleWs)
+	http.HandleFunc("/send", handleSend)
 
 	go handleMessages()
 
@@ -54,32 +55,32 @@ func isPortAvailable(port int) bool {
 	return true
 }
 
-func sendPage(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
+func handleSend(w http.ResponseWriter, r *http.Request) {
+	respBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, "Unable to parse form", http.StatusBadRequest)
 		return
 	}
 
 	// 获取表单参数
-	message := r.FormValue("msg")
-	lastmsg.Content = message
-	lastmsg.Type = 1
-	broadcast <- lastmsg
+	lastMsg.Content = respBody
+	lastMsg.Type = 1
+	broadcast <- lastMsg
 
+	log.Printf("handleSend: %s\n", respBody)
 	// 处理并输出响应
-	fmt.Fprintf(w, "Received msg: %s\n", message)
+	fmt.Fprintf(w, "Received : %s\n", respBody)
 }
 
-func handleConnections(w http.ResponseWriter, r *http.Request) {
+func handleWs(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	defer conn.Close()
-	if lastmsg.Type != 0 {
-		conn.WriteMessage(lastmsg.Type, []byte(lastmsg.Content))
+	if lastMsg.Type != 0 {
+		conn.WriteMessage(lastMsg.Type, []byte(lastMsg.Content))
 	}
 	clients[conn] = true
 
@@ -90,10 +91,10 @@ func handleConnections(w http.ResponseWriter, r *http.Request) {
 			delete(clients, conn)
 			return
 		}
-		lastmsg.Type = mt
-		lastmsg.Content = string(message)
-		log.Printf("recv: %+v", lastmsg)
-		broadcast <- lastmsg
+		lastMsg.Type = mt
+		lastMsg.Content = message
+		log.Printf("handleWs: %+v", err)
+		broadcast <- lastMsg
 	}
 }
 
@@ -102,7 +103,7 @@ func handleMessages() {
 		msg := <-broadcast
 
 		for client := range clients {
-			err := client.WriteMessage(msg.Type, []byte(msg.Content))
+			err := client.WriteMessage(msg.Type, msg.Content)
 			if err != nil {
 				fmt.Println(err)
 				client.Close()

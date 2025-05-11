@@ -1,12 +1,29 @@
 `go build -ldflags "-w -s" -o transws`
 
-- @ques 怎么用curl请求一个ws信息
+- @ques 怎么用 curl 请求一个 ws 信息
 - @ques 如果已经启动程序直接关闭进程
-
 
 ```
 curl -X POST -d "msg=value1" "127.0.0.1:60829/send"
 
+curl -X POST -H "Content-Type: application/json" -d '{"time_list": [[416.6, 419.3], [446.6, 450.2], [474.2, 476], [557
+, 560.3], [611.2, 615.6], [625.7, 629.3], [672, 674.6], [754.1, 757.3], [790.8, 793.7], [819.5, 821.6]], "action": "li
+st_loop", "type": "youtube", "count": 3, "link": "https://www.youtube.com/watch?v=rn9dkV4sVYQ", "cur_index": 0}' "127.
+0.0.1:60829/send"
+
+```
+
+```ts
+{
+  type: "youtube" | "xxx";
+  link: string;
+  action: string
+  count: number,
+  time: [number,number]
+  timeList: [number,number][],
+  cur_index: number,
+  count: number,
+}
 ```
 
 ```

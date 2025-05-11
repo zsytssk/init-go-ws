@@ -1,4 +1,4 @@
-module init-go-ws
+module transws
 
 go 1.23.0
 

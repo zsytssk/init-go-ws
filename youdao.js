@@ -16,22 +16,23 @@
 
   ws.onopen = function (evt) {
     console.log("ws:> onopen", url);
+    ws.send("getInit");
   };
   ws.onclose = function (evt) {
     console.log("ws:> close");
     ws = null;
   };
   ws.onmessage = function (evt) {
-    const [type, msg] = evt.data.split("|");
-    console.log(`test:>msg`, { type, msg });
+    const inputElement = document.getElementById("search_input");
+    console.log(`test:>`, evt.data);
+    const { type, str } = JSON.parse(evt.data);
     if (type !== "trans") {
       return;
     }
-
-    const inputElement = document.getElementById("search_input");
-    inputElement.value = msg;
+    inputElement.value = str;
     const inputEvent = new Event("input");
     inputElement.dispatchEvent(inputEvent);
+
     document.querySelector(".translate_btn").click();
   };
   ws.onerror = function (evt) {
