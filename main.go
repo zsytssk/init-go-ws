@@ -6,6 +6,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/websocket"
 )
@@ -80,7 +81,7 @@ func handleWs(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 	if lastMsg.Type != 0 {
-		conn.WriteMessage(lastMsg.Type, []byte(lastMsg.Content))
+
 	}
 	clients[conn] = true
 
@@ -91,10 +92,14 @@ func handleWs(w http.ResponseWriter, r *http.Request) {
 			delete(clients, conn)
 			return
 		}
-		lastMsg.Type = mt
-		lastMsg.Content = message
-		log.Printf("handleWs: %+v", err)
-		broadcast <- lastMsg
+		if string(message) == "getInit" {
+			conn.WriteMessage(lastMsg.Type, []byte(lastMsg.Content))
+		}
+		info := make(map[string]string)
+		info["type"] = strconv.Itoa(mt)
+		info["content"] = string(message)
+		log.Printf("handleWs: %+v", info)
+		// broadcast <- lastMsg
 	}
 }
 
