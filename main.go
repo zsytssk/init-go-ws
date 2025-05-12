@@ -80,9 +80,6 @@ func handleWs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer conn.Close()
-	if lastMsg.Type != 0 {
-
-	}
 	clients[conn] = true
 
 	for {
