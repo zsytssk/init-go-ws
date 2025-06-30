@@ -1,12 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net"
 	"net/http"
-	"strconv"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -20,10 +21,12 @@ var upgrader = websocket.Upgrader{
 var clients = make(map[*websocket.Conn]bool)
 var broadcast = make(chan Message)
 var lastMsg = Message{Type: 0}
+var handleListeners = make(map[uint32]chan string)
 
 type Message struct {
 	Type    int
-	Content []byte
+	ID      uint32
+	Content string
 }
 
 func main() {
@@ -42,6 +45,13 @@ func main() {
 	if err != nil {
 		panic("Error starting server: " + err.Error())
 	}
+}
+
+var id uint32 = 0
+
+func genId() uint32 {
+	id = id + 1
+	return id
 }
 
 func isPortAvailable(port int) bool {
@@ -64,13 +74,27 @@ func handleSend(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 获取表单参数
-	lastMsg.Content = respBody
+	ID := genId()
+	lastMsg.Content = string(respBody)
 	lastMsg.Type = 1
+	lastMsg.ID = ID
 	broadcast <- lastMsg
 
 	log.Printf("handleSend: %s\n", respBody)
-	// 处理并输出响应
-	fmt.Fprintf(w, "Received : %s\n", respBody)
+	// 创建用于接收响应的 channel
+	respChan := make(chan string, 1) // 缓冲防止 goroutine 泄漏
+
+	handleListeners[ID] = respChan
+
+	// 等待响应或超时
+	select {
+	case response := <-respChan: // 同步写入响应
+		w.Write([]byte(response))
+	case <-time.After(3 * time.Second): // 设置超时时间
+		http.Error(w, "Response timeout", http.StatusGatewayTimeout)
+	case <-r.Context().Done(): // 客户端提前断开连接
+	}
+	delete(handleListeners, ID)
 }
 
 func handleWs(w http.ResponseWriter, r *http.Request) {
@@ -83,20 +107,24 @@ func handleWs(w http.ResponseWriter, r *http.Request) {
 	clients[conn] = true
 
 	for {
-		mt, message, err := conn.ReadMessage()
+		_, message, err := conn.ReadMessage()
 		if err != nil {
 			fmt.Println(err)
 			delete(clients, conn)
 			return
 		}
 		if string(message) == "getInit" {
-			conn.WriteMessage(lastMsg.Type, []byte(lastMsg.Content))
+			clientSendMsg(conn, lastMsg)
+			continue
 		}
-		info := make(map[string]string)
-		info["type"] = strconv.Itoa(mt)
-		info["content"] = string(message)
-		log.Printf("handleWs: %+v", info)
-		// broadcast <- lastMsg
+		msg := Message{}
+		err = json.Unmarshal(message, &msg)
+		if err != nil {
+			continue
+		}
+		if respChan, ok := handleListeners[msg.ID]; ok {
+			respChan <- msg.Content // 发送响应
+		}
 	}
 }
 
@@ -105,12 +133,18 @@ func handleMessages() {
 		msg := <-broadcast
 
 		for client := range clients {
-			err := client.WriteMessage(msg.Type, msg.Content)
-			if err != nil {
-				fmt.Println(err)
-				client.Close()
-				delete(clients, client)
-			}
+			clientSendMsg(client, msg)
 		}
 	}
+}
+
+func clientSendMsg(client *websocket.Conn, msg Message) error {
+	if msg.ID == 0 {
+		msg.ID = genId()
+	}
+	data, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
+	return client.WriteMessage(msg.Type, data)
 }

@@ -24,7 +24,8 @@
   };
   ws.onmessage = function (evt) {
     const inputElement = document.getElementById("search_input");
-    const { type, str } = JSON.parse(evt.data);
+    const { Content } = JSON.parse(evt.data);
+    const { type, str } = JSON.parse(Content);
     if (type !== "trans") {
       return;
     }

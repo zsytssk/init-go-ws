@@ -96,6 +96,7 @@ function togglePause(video) {
 }
 
 async function loopVideoList(video, info) {
+  console.log(`test:>loopVideoList`, info);
   isOnLoop = true;
   let { count, cur_index, time_list } = info;
   time_list = [...time_list.slice(cur_index), ...time_list.slice(0, cur_index)];
@@ -111,6 +112,14 @@ async function loopVideoList(video, info) {
   }
 }
 
+function sendBackState(ws, video, ID) {
+  const state = {
+    currentTime: video.currentTime,
+    playbackRate: video.playbackRate,
+  };
+  ws.send(JSON.stringify({ ID, Content: JSON.stringify(state) }));
+}
+
 (function () {
   "use strict";
   const url = "http://localhost:60829/ws";
@@ -124,9 +133,21 @@ async function loopVideoList(video, info) {
     ws = null;
   };
   ws.onmessage = function (evt) {
+    const { ID, Content } = JSON.parse(evt.data);
     const { type, action, link, time, time_list, count, cur_index } =
-      JSON.parse(evt.data);
+      JSON.parse(Content);
 
+    console.log(
+      "ws:> onmessage",
+      ID,
+      type,
+      action,
+      link,
+      time,
+      time_list,
+      count,
+      cur_index
+    );
     if (type !== "youtube" || !location.href.startsWith(link)) {
       return;
     }
@@ -172,6 +193,9 @@ async function loopVideoList(video, info) {
         togglePause(video);
         break;
     }
+    setTimeout(() => {
+      sendBackState(ws, video, ID);
+    }, 10);
   };
   ws.onerror = function (evt) {
     console.log("ws:> error " + evt.data);
