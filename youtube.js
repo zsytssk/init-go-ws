@@ -137,17 +137,17 @@ function sendBackState(ws, video, ID) {
     const { type, action, link, time, time_list, count, cur_index } =
       JSON.parse(Content);
 
-    console.log(
-      "ws:> onmessage",
-      ID,
-      type,
-      action,
-      link,
-      time,
-      time_list,
-      count,
-      cur_index
-    );
+    // console.log(
+    //   "ws:> onmessage",
+    //   ID,
+    //   type,
+    //   action,
+    //   link,
+    //   time,
+    //   time_list,
+    //   count,
+    //   cur_index
+    // );
     if (type !== "youtube" || !location.href.startsWith(link)) {
       return;
     }

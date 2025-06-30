@@ -85,7 +85,7 @@ func handleSend(w http.ResponseWriter, r *http.Request) {
 	respChan := make(chan string, 1) // 缓冲防止 goroutine 泄漏
 
 	handleListeners[ID] = respChan
-
+	defer delete(handleListeners, ID)
 	// 等待响应或超时
 	select {
 	case response := <-respChan: // 同步写入响应
@@ -94,7 +94,6 @@ func handleSend(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Response timeout", http.StatusGatewayTimeout)
 	case <-r.Context().Done(): // 客户端提前断开连接
 	}
-	delete(handleListeners, ID)
 }
 
 func handleWs(w http.ResponseWriter, r *http.Request) {
