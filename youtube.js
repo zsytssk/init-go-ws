@@ -6,7 +6,6 @@
 // @author       You
 // @match        https://www.youtube.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=youtube.com
-// @grant        GM_setClipboard
 // @run-at       document-end
 // ==/UserScript==
 
@@ -184,18 +183,16 @@ function sendBackState(ws, video, ID) {
         clearLoopVideo();
         triggerKeyEvent(39);
         break;
-      case "copy_time":
-        GM_setClipboard(video.currentTime.toFixed(1), "text", () =>
-          console.log("Clipboard set!")
-        );
-        break;
       case "toggle_pause":
         togglePause(video);
         break;
+      default:
+        break;
     }
+
     setTimeout(() => {
       sendBackState(ws, video, ID);
-    }, 10);
+    }, 0);
   };
   ws.onerror = function (evt) {
     console.log("ws:> error " + evt.data);
