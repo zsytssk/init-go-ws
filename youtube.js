@@ -115,6 +115,7 @@ function sendBackState(ws, video, ID) {
   const state = {
     currentTime: video.currentTime,
     playbackRate: video.playbackRate,
+    url: location.href,
   };
   ws.send(JSON.stringify({ ID, Content: JSON.stringify(state) }));
 }
@@ -147,6 +148,15 @@ function sendBackState(ws, video, ID) {
     //   count,
     //   cur_index
     // );
+    if (type === "youtube" && action === "copy_url") {
+      const video = document.querySelector("video");
+      if (!video.paused) {
+        setTimeout(() => {
+          sendBackState(ws, video, ID);
+        }, 0);
+      }
+      return;
+    }
     if (type !== "youtube" || !location.href.startsWith(link)) {
       return;
     }
