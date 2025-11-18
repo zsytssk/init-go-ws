@@ -10,7 +10,6 @@ curl -X POST -H "Content-Type: application/json" -d '{"time_list": [[416.6, 419.
 , 560.3], [611.2, 615.6], [625.7, 629.3], [672, 674.6], [754.1, 757.3], [790.8, 793.7], [819.5, 821.6]], "action": "li
 st_loop", "type": "youtube", "count": 3, "link": "https://www.youtube.com/watch?v=rn9dkV4sVYQ", "cur_index": 0}' "127.
 0.0.1:60829/send"
-
 ```
 
 ```ts
