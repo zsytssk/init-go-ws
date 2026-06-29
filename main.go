@@ -27,6 +27,7 @@ type Message struct {
 	Type    int
 	ID      uint32
 	Content string
+	ClientNum int
 }
 
 func main() {
@@ -78,6 +79,7 @@ func handleSend(w http.ResponseWriter, r *http.Request) {
 	lastMsg.Content = string(respBody)
 	lastMsg.Type = 1
 	lastMsg.ID = ID
+	lastMsg.ClientNum = len(clients)
 	broadcast <- lastMsg
 
 	log.Printf("handleSend: %s\n", respBody)
